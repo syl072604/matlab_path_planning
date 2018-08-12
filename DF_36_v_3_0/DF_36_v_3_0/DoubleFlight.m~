@@ -1,0 +1,77 @@
+% ?Rahul Kala, IIIT Allahabad, Creative Commons Attribution-ShareAlike 4.0 International License. 
+% The use of this code, its parts and all the materials in the text; creation of derivatives and their publication; and sharing the code publically is permitted without permission. 
+% Please cite the work in all materials as: R. Kala (2014) Code for Robot Path Planning using Genetic Algorithms, Indian Institute of Information Technology Allahabad, Available at: http://rkala.in/codes.html
+
+global map source goal noOfFlights noOfDimensions splineSmoothing noOfPointsInSolution
+
+map = ones(500,500,300);
+noOfFlights = 9;
+noOfDimensions = 3;
+noOfPointsInSolution=1; % no. of points that represent a candidate path, excluding the source and goal. each point marks a robot turn.
+
+source=[200 50 100;
+        200 100 150;
+        200 150 100;
+        200 200 150;
+        200 250 100;
+        200 300 150;
+        200 350 100;
+        200 400 150;
+        200 450 100;]; % source position in X, Y Z format
+goal=[150 150 200;
+      150 250 200;
+      150 350 200;
+      250 150 200;
+      250 250 200;
+      250 350 200;
+      350 150 200;
+      350 250 200;
+      350 350 200;]; % goal position in X, Y Z format
+
+NoOfGenerations=100;
+PopulationSize=300;
+splineSmoothing=true; % use spline based smoothing. the code has a dependence on the resoultion, and may be set to false if large changes in resolution are made.
+
+%%%%% parameters end here %%%%%
+
+tic;
+for i = 1:noOfFlights
+    if ~feasiblePointDF(source(i,:),map), error('source lies on an obstacle or outside map'); end
+    if ~feasiblePointDF(goal(i,:),map), error('goal lies on an obstacle or outside map'); end
+end
+
+if noOfPointsInSolution<=0, error('noOfPointsInSolution should be greater than 1'); end
+
+% currently the lower bounds and upper bounds are taken as 0 and 1 respectively, 
+% these would be re-scaled in phenotype generation to ensure that they lie inside map. 
+options=gaoptimset('PlotFcns', {@gaplotbestf, @gaplotdistance, @gaplotrange},'Generations',NoOfGenerations,'PopulationSize',PopulationSize, 'FitnessLimit', 10000);
+[solution cost] = ga(@PathCostGADF, noOfPointsInSolution*noOfFlights*noOfDimensions,[],[],[],[],zeros(noOfPointsInSolution*noOfFlights*noOfDimensions,1),ones(noOfPointsInSolution*noOfFlights*noOfDimensions,1),[],options);
+disp('click/press any key');
+waitforbuttonpress; 
+% if PathCostGADF(solution)>size(map,1)*size(map,2)*size(map,3) % indicating an infeasible path due to large cost due to penalties
+%     error('no path found');
+% end
+fprintf('processing time=%d \nPath Length=%d \n\n', toc,cost);
+
+figure(2)
+for i = 1:noOfFlights
+    path = [source(i,:); [solution(3*i-2:noOfFlights*noOfDimensions:end)'*size(map,1) solution(3*i-1:noOfFlights*noOfDimensions:end)'*size(map,2) solution(3*i:noOfFlights*noOfDimensions:end)'*size(map,3)]; goal(i,:)]; % souce and goal is fixed. other points are from the GA individual representation
+    pathsp =path;
+    if splineSmoothing
+       pathsp=bsp(path); % a point based specification of path is smoothed by using splines
+    end
+    plot3(source(:,1),source(:,2),source(:,3),'*')
+    plot3(goal(:,1),goal(:,2),goal(:,3),'o')
+    hold on
+    plot3(pathsp(:,1),pathsp(:,2),pathsp(:,3),'-')
+    comet3(pathsp(:,1),pathsp(:,2),pathsp())
+    hold on
+end
+
+
+% path=[source; [solution(1:2:end)'*size(map,1) solution(2:2:end)'*size(map,2)]; goal]; % souce and goal is fixed. other points are from the GA individual representation
+
+% clf;
+% imshow(map);
+% rectangle('position',[1 1 size(map)-1],'edgecolor','k');
+% line(path(:,2),path(:,1));

@@ -1,0 +1,5 @@
+function newP=randPoint(currentP,stepSizeHorizen,oldP)
+alpha = 2*pi*rand;
+newP = currentP + [stepSizeHorizen*cos(alpha),stepSizeHorizen*sin(alpha), 0]
+
+

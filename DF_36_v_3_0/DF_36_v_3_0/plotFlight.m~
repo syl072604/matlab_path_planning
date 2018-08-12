@@ -1,0 +1,23 @@
+figure(1);
+
+vidObj = VideoWriter('peaks.avi');
+open(vidObj);
+
+for i = 1:200
+    
+    for j = 1:9
+        axis([0 500 0 500 0 300]);
+        if(i>100)
+            plot3(pathsp(100,1,j),pathsp(100,2,j),pathsp(i,3,j),'*')
+        else
+            plot3(pathsp(i,1,j),pathsp(i,2,j),pathsp(i,3,j),'*')
+        end
+        
+        hold on
+    end
+    mov(i) = getframe;
+    writeVideo(vidObj,mov(i))
+    hold off
+end
+movie(mov)
+close(vidObj)

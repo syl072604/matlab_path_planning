@@ -1,0 +1,55 @@
+% ?Rahul Kala, IIIT Allahabad, Creative Commons Attribution-ShareAlike 4.0 International License. 
+% The use of this code, its parts and all the materials in the text; creation of derivatives and their publication; and sharing the code publically is permitted without permission. 
+% Please cite the work in all materials as: R. Kala (2014) Code for Robot Path Planning using Genetic Algorithms, Indian Institute of Information Technology Allahabad, Available at: http://rkala.in/codes.html
+
+function cost=PathCostGADF(X) %GA cost function
+%%
+global map source goal noOfFlights noOfDimensions noOfPointsInSolution
+
+%% build the path
+cost=0;
+path = [];
+distance = [0 0];
+segmentCost = [0];
+
+for i = 1:noOfFlights
+    path = [path;source(i,:); [X(3*i-2:noOfFlights*noOfDimensions:end)'*size(map,1) X(3*i-1:noOfFlights*noOfDimensions:end)'*size(map,2) X(3*i:noOfFlights*noOfDimensions:end)'*size(map,3)]; goal(i,:)]; % souce and goal is fixed. other points are from the GA individual representation
+end
+
+%% cost of path total length
+
+for i = 1:noOfFlights
+    distanceCost(i) = 0;
+    segmentDistPenalty(i) =1;
+    lengthStdCost(i) = 1;
+    pathLength = [];
+    for j=2:2+noOfPointsInSolution
+        distance = DistanceCostDF(path((i-1)*(2+noOfPointsInSolution)+j-1,:),path((i-1)*(2+noOfPointsInSolution)+j,:));
+        pathLength = [pathLength;distance];
+        distanceCost(i) = distanceCost(i) + distance;
+        for k = i+1:noOfFlights
+            for m = 2:2+noOfPointsInSolution
+                segmentDistPenalty(i) = segmentDistPenalty(i) + SegmentDistPenaltyDF(path((i-1)*(2+noOfPointsInSolution)+j-1,:),path((i-1)*(2+noOfPointsInSolution)+j,:),path((k-1)*(2+noOfPointsInSolution)+m-1,:),path((k-1)*(2+noOfPointsInSolution)+m,:));
+            end
+        end
+    end
+%     lengthStdCost(i) = 1 + std(pathLength)/100;
+    cost = cost + segmentDistPenalty(i) * lengthStdCost(i) * distanceCost(i);
+end
+
+%% cost of segment distance between different flights
+% 
+% for i = 1:noOfFlights-1
+%     
+%     for j=2:2+noOfPointsInSolution
+%         for k = i+1:noOfFlights
+%             for m = 2:2+noOfPointsInSolution
+%                 segmentCost(i) = 10000/SegmentDistDF(path((i-1)*5+j-1,:),path((i-1)*5+j,:),path((k-1)*5+m-1,:),path((k-1)*5+m,:));
+%             end
+%         end
+%     end
+%     cost = cost + segmentCost(i);
+% end
+
+
+
